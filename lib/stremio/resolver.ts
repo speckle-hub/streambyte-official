@@ -9,6 +9,7 @@ export type ResolvedStream = {
   provider?: string;
   size?: string;
   isDebrid?: boolean;
+  headers?: Record<string, string>;
 };
 
 export class StreamResolver {
@@ -48,6 +49,7 @@ export class StreamResolver {
         quality,
         name,
         provider: stream.name || 'Direct',
+        headers: stream.behaviorHints?.proxyHeaders
       };
     }
 

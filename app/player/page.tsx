@@ -25,11 +25,15 @@ const ReactPlayer = dynamic(() => import('react-player/lazy'), {
 function Player() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const streamUrl = searchParams.get('url');
+  const streamUrl = searchParams.get('url') || '';
   const type = searchParams.get('type') || 'movie';
   const id = searchParams.get('id') || '';
   const name = searchParams.get('name') || 'Unknown Title';
   const poster = searchParams.get('poster') || '';
+  const headersParam = searchParams.get('headers');
+  
+  const headers = headersParam ? JSON.parse(headersParam) : null;
+  const isMagnet = streamUrl.startsWith('magnet:');
 
   const [playing, setPlaying] = useState(true);
   const [volume, setVolume] = useState(1);
@@ -142,14 +146,28 @@ function Player() {
   }, [playing, muted]);
 
 
-  if (!streamUrl) {
+  if (!streamUrl || isMagnet) {
     return (
-      <div className="h-screen w-screen bg-background flex flex-col items-center justify-center p-8 gap-4">
+      <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-8 text-center gap-6">
         <div className="h-24 w-24 bg-red-500/10 rounded-full flex items-center justify-center">
           <AlertCircle className="h-12 w-12 text-red-500" />
         </div>
-        <h1 className="text-2xl font-black italic tracking-tighter">No Stream Found</h1>
-        <button onClick={() => router.back()} className="px-8 py-3 bg-white text-black rounded-2xl font-bold">Go Back</button>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-black italic tracking-tighter">
+            {isMagnet ? 'P2P Playback Restricted' : 'No Stream Found'}
+          </h1>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            {isMagnet 
+              ? 'Torrent links cannot be played directly in the browser. They require a Debrid service or an external app like Stremio.' 
+              : 'The selected stream is invalid or no longer available.'}
+          </p>
+        </div>
+        <button 
+          onClick={() => router.back()} 
+          className="px-8 py-3 bg-white text-black rounded-2xl font-bold hover:scale-105 active:scale-95 transition-transform"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
@@ -177,7 +195,16 @@ function Player() {
           file: {
             forceHLS: streamUrl.includes('.m3u8'),
             attributes: {
-              crossOrigin: 'anonymous'
+              crossOrigin: headers ? undefined : 'anonymous', // Don't use anonymous if we have custom headers as it might trigger CORS preflights we can't control
+            },
+            hlsOptions: {
+              xhrSetup: (xhr: any, url: any) => {
+                if (headers) {
+                  Object.entries(headers).forEach(([key, value]) => {
+                    xhr.setRequestHeader(key, value);
+                  });
+                }
+              }
             }
           }
         }}
