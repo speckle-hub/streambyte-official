@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Play, Pause, Volume2, VolumeX, Maximize, Minimize, 
   ArrowLeft, Settings, SkipForward, SkipBack, 
-  Loader2, AlertCircle, Monitor, ChevronRight 
+  Loader2, AlertCircle, Monitor, ChevronRight, Tv
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/lib/stremio/stremio-utils';
@@ -34,6 +34,14 @@ function Player() {
   
   const headers = headersParam ? JSON.parse(headersParam) : null;
   const isMagnet = streamUrl.startsWith('magnet:');
+  const notWebReady = searchParams.get('notWebReady') === 'true';
+
+  const externalUrls = {
+    vlc: streamUrl.startsWith('http') ? `vlc://${streamUrl}` : null,
+    stremio: `stremio:///detail/${type}/${id}`,
+    // PotPlayer for Windows
+    potplayer: streamUrl.startsWith('http') ? `potplayer://${streamUrl}` : null,
+  };
 
   const [playing, setPlaying] = useState(true);
   const [volume, setVolume] = useState(1);
@@ -146,28 +154,59 @@ function Player() {
   }, [playing, muted]);
 
 
-  if (!streamUrl || isMagnet) {
+  if (!streamUrl || isMagnet || (notWebReady && !playing)) {
     return (
-      <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-8 text-center gap-6">
-        <div className="h-24 w-24 bg-red-500/10 rounded-full flex items-center justify-center">
-          <AlertCircle className="h-12 w-12 text-red-500" />
+      <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-8 text-center gap-10">
+        <div className="space-y-6">
+          <div className="h-24 w-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="h-12 w-12 text-red-500" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap">
+              {isMagnet ? 'P2P Link Detected' : notWebReady ? 'External Format' : 'Playback Error'}
+            </h1>
+            <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest max-w-sm mx-auto leading-relaxed">
+              {isMagnet 
+                ? 'Magnet links require a Debrid service or an external app like Stremio to play.' 
+                : notWebReady 
+                  ? 'This stream is not compatible with web browsers. Please use an external player.'
+                  : 'The stream failed to load or is blocked by browser security (CORS).'}
+            </p>
+          </div>
         </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-black italic tracking-tighter">
-            {isMagnet ? 'P2P Playback Restricted' : 'No Stream Found'}
-          </h1>
-          <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            {isMagnet 
-              ? 'Torrent links cannot be played directly in the browser. They require a Debrid service or an external app like Stremio.' 
-              : 'The selected stream is invalid or no longer available.'}
-          </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
+          {externalUrls.vlc && (
+            <a 
+              href={externalUrls.vlc}
+              className="flex items-center justify-center gap-3 px-6 py-4 bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+            >
+              <Monitor className="h-4 w-4" />
+              Open in VLC
+            </a>
+          )}
+          <a 
+            href={externalUrls.stremio}
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+          >
+            <Tv className="h-4 w-4" />
+            Open in Stremio
+          </a>
+          <button 
+            onClick={() => router.back()} 
+            className="sm:col-span-2 flex items-center justify-center gap-3 px-6 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Details
+          </button>
         </div>
-        <button 
-          onClick={() => router.back()} 
-          className="px-8 py-3 bg-white text-black rounded-2xl font-bold hover:scale-105 active:scale-95 transition-transform"
-        >
-          Go Back
-        </button>
+
+        <div className="flex flex-col items-center gap-2">
+            <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.3em]">Technical Details</p>
+            <code className="text-[8px] text-zinc-500 bg-zinc-900 px-3 py-1 rounded-full border border-white/5 max-w-[300px] truncate">
+                {streamUrl}
+            </code>
+        </div>
       </div>
     );
   }

@@ -10,6 +10,7 @@ export type ResolvedStream = {
   size?: string;
   isDebrid?: boolean;
   headers?: Record<string, string>;
+  notWebReady?: boolean;
 };
 
 export class StreamResolver {
@@ -49,7 +50,8 @@ export class StreamResolver {
         quality,
         name,
         provider: stream.name || 'Direct',
-        headers: stream.behaviorHints?.proxyHeaders
+        headers: stream.behaviorHints?.proxyHeaders,
+        notWebReady: stream.behaviorHints?.notWebReady
       };
     }
 

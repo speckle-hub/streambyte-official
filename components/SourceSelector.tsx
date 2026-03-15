@@ -89,7 +89,7 @@ export function SourceSelector({ id, type, name, poster }: SourceSelectorProps) 
         {streams.map((stream, idx) => (
           <Link
             key={idx}
-            href={`/player?url=${encodeURIComponent(stream.url)}&id=${id}&type=${type}&name=${encodeURIComponent(name)}&poster=${encodeURIComponent(poster || '')}${stream.headers ? `&headers=${encodeURIComponent(JSON.stringify(stream.headers))}` : ''}`}
+            href={`/player?url=${encodeURIComponent(stream.url)}&id=${id}&type=${type}&name=${encodeURIComponent(name)}&poster=${encodeURIComponent(poster || '')}${stream.headers ? `&headers=${encodeURIComponent(JSON.stringify(stream.headers))}` : ''}${stream.notWebReady ? '&notWebReady=true' : ''}`}
             className="group flex items-center justify-between p-5 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-[0.98]"
           >
             <div className="flex items-center gap-5">
