@@ -8,11 +8,14 @@ import Image from 'next/image';
 import { Play, Star, Calendar, Clock, Info, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useAddonStore } from '@/store/useAddonStore';
+import { useState } from 'react';
+import { SourceSelector } from '@/components/SourceSelector';
 
 export default function MoviePage() {
   const { id } = useParams();
   const movieId = id as string;
   const { getEnabledAddons } = useAddonStore();
+  const [showSources, setShowSources] = useState(false);
 
   const { data: movie, isLoading } = useQuery({
     queryKey: ['meta', 'movie', movieId],
@@ -97,13 +100,13 @@ export default function MoviePage() {
               </div>
               
               <div className="flex flex-wrap gap-4 mt-4">
-                <Link
-                  href={`/player?id=${movieId}&type=movie`}
+                <button
+                  onClick={() => setShowSources(true)}
                   className="flex items-center gap-3 rounded-xl bg-primary px-10 py-4 text-lg font-black text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
                 >
                   <Play className="h-6 w-6 fill-current" />
                   Watch Now
-                </Link>
+                </button>
                 <button className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-md px-10 py-4 text-lg font-black hover:bg-white/20 transition-all border border-white/10 group">
                   <Info className="h-6 w-6 group-hover:rotate-12 transition-transform" />
                   Details
@@ -117,6 +120,17 @@ export default function MoviePage() {
       {/* Content Section */}
       <section className="max-w-7xl mx-auto w-full px-6 grid grid-cols-1 gap-16 lg:grid-cols-3 pb-20">
         <div className="lg:col-span-2 flex flex-col gap-8">
+          {showSources && (
+            <div className="p-8 rounded-3xl bg-zinc-900 border border-primary/20 shadow-2xl shadow-primary/5 animate-in slide-in-from-top-4 duration-500">
+               <SourceSelector 
+                 id={movieId} 
+                 type="movie" 
+                 name={movie.name} 
+                 poster={movie.poster} 
+               />
+            </div>
+          )}
+
           <div className="flex flex-col gap-4">
             <h2 className="text-2xl font-bold font-display flex items-center gap-2">
               <span className="h-8 w-1 bg-primary rounded-full" />

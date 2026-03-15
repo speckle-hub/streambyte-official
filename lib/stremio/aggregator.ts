@@ -62,6 +62,37 @@ export class CatalogAggregator {
   }
 
   /**
+   * Fetches and resolves streams from all enabled addons
+   */
+  static async getUnifiedStreams(
+    addonUrls: string[],
+    type: string,
+    id: string
+  ): Promise<any[]> {
+    const results = await Promise.allSettled(
+      addonUrls.map((url) => new StremioAddon(url).getStreams(type, id))
+    );
+
+    const allStreams = results
+      .filter((r): r is PromiseFulfilledResult<any[]> => r.status === 'fulfilled')
+      .flatMap((r) => r.value);
+
+    // Resolve and deduplicate (roughly)
+    const seen = new Set<string>();
+    const unified: any[] = [];
+
+    for (const stream of allStreams) {
+      // Create a unique key for deduplication based on URL or title
+      const key = stream.url || stream.infoHash || stream.ytId || stream.externalUrl || stream.title;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unified.push(stream);
+    }
+
+    return unified;
+  }
+
+  /**
    * Simple pagination helper
    */
   static paginate(items: MetaPreview[], page: number, pageSize: number = 20): MetaPreview[] {
