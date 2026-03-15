@@ -6,15 +6,19 @@ import { MediaCard } from '@/components/MediaCard';
 import { MediaCardSkeleton } from '@/components/MediaCardSkeleton';
 import { useQuery } from '@tanstack/react-query';
 import { Tv } from 'lucide-react';
+import { isNSFWItem } from '@/lib/contentFilter';
 
 export default function SeriesPage() {
   const enabledAddons = useAddonStore((state) => state.getEnabledAddons());
+  const nsfwEnabled = useAddonStore((state) => state.nsfwEnabled);
 
-  const { data, isLoading } = useQuery({
+  const { data: rawData, isLoading } = useQuery({
     queryKey: ['catalog-series-page', enabledAddons],
     queryFn: () => CatalogAggregator.getUnifiedCatalog(enabledAddons, 'series', 'top'),
     enabled: enabledAddons.length > 0,
   });
+
+  const data = (rawData || []).filter(item => nsfwEnabled || !isNSFWItem(item));
 
   return (
     <main className="min-h-screen bg-background p-12 space-y-12">

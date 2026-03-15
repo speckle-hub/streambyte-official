@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { icon: Home, label: 'Home', href: '/' },
   { icon: Compass, label: 'Browse', href: '/browse' },
-  { icon: Film, label: 'Movies', href: '/movie' }, // This will be handled by catalogs
+  { icon: Film, label: 'Movies', href: '/movies' }, // This will be handled by catalogs
   { icon: Tv, label: 'Series', href: '/series' },
   { icon: LayoutGrid, label: 'Addons', href: '/addons' },
 ];

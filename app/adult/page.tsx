@@ -16,7 +16,7 @@ export default function AdultPage() {
   
   // Get all addons that are categorized as adult or classified as NSFW
   const adultAddons = addons
-    .filter(a => a.category === 'adult' || a.category === 'hentai')
+    .filter(a => a.category === 'adult' || a.url.includes('dirty-pink') || a.url.includes('baby-beamup') || a.url.includes('xclub-stremio'))
     .map(a => a.url);
 
   const { data, isLoading } = useQuery({

@@ -14,7 +14,7 @@ export default function HentaiPage() {
   const setNsfwEnabled = useAddonStore((state) => state.setNsfwEnabled);
   
   const hentaiAddons = addons
-    .filter(a => a.category === 'adult' || a.url.includes('hentai') || a.url.includes('hanime'))
+    .filter(a => a.category === 'hentai' || a.url.includes('hentaistream') || a.url.includes('hanime') || a.url.includes('hianime'))
     .map(a => a.url);
 
   const { data, isLoading } = useQuery({

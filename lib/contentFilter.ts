@@ -1,5 +1,14 @@
 import { Manifest, CatalogItem } from './stremio/types';
 
+export const NSFW_DOMAINS = [
+  'dirty-pink.ers.pw',
+  'baby-beamup.club',
+  'xclub-stremio.vercel.app',
+  'hentaistream-addon',
+  'hanime-stremio',
+  'streamio-hianime',
+];
+
 const NSFW_KEYWORDS = [
   'adult',
   'hentai',

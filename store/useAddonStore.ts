@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Manifest } from '@/lib/stremio/types';
 import { PRESET_ADDONS } from '@/lib/stremio/client';
-import { isNSFWAddon } from '@/lib/contentFilter';
+import { isNSFWAddon, NSFW_DOMAINS } from '@/lib/contentFilter';
 
 export type InstalledAddon = {
   url: string;
@@ -61,28 +61,38 @@ export const useAddonStore = create<AddonState>()(
       nsfwEnabled: false,
 
       installAddon: (url, category) =>
-        set((state) => ({
-          addons: state.addons.find((a) => a.url === url)
-            ? state.addons
-            : [
-                ...state.addons, 
-                { 
-                  url, 
-                  priority: state.addons.length, 
-                  enabled: true, 
-                  category,
-                  lastSynced: Date.now()
-                }
-              ],
-        })),
+        set((state) => {
+          let finalCategory = category;
+          if (url.includes('dirty-pink') || url.includes('baby-beamup') || url.includes('xclub-stremio')) {
+            finalCategory = 'adult';
+          } else if (url.includes('hentaistream') || url.includes('hanime') || url.includes('hianime')) {
+            finalCategory = 'hentai';
+          }
+
+          return {
+            addons: state.addons.find((a) => a.url === url)
+              ? state.addons
+              : [
+                  ...state.addons, 
+                  { 
+                    url, 
+                    priority: state.addons.length, 
+                    enabled: true, 
+                    category: finalCategory,
+                    lastSynced: Date.now()
+                  }
+                ],
+          };
+        }),
 
       installPresetPack: (packName) => {
         const urls = PRESET_ADDONS[packName];
         set((state) => {
           const newAddons = [...state.addons];
           urls.forEach((url) => {
-            // Special rule: Skip NSFW addons when installing Anime pack
-            if (packName === 'anime' && (url.includes('hentai') || url.includes('hanime'))) {
+            // Strict filter: Don't allow NSFW addons into movies or anime packs
+            const isNSFWUrl = NSFW_DOMAINS.some(domain => url.includes(domain));
+            if ((packName === 'movies' || packName === 'anime') && isNSFWUrl) {
               return;
             }
             

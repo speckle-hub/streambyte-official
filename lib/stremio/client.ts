@@ -162,14 +162,16 @@ export const PRESET_ADDONS = {
   ],
   anime: [
     'https://animestream-addon.keypop3750.workers.dev/manifest.json',
-    'https://streamio-hianime.onrender.com/manifest.json',
   ],
   adult: [
-    'https://hentaistream-addon.keypop3750.workers.dev/manifest.json',
-    'https://hanime-stremio.fly.dev/manifest.json',
     'https://dirty-pink.ers.pw/manifest.json',
     'https://07b88951aaab-jaxxx-v2.baby-beamup.club/manifest.json',
     'https://xclub-stremio.vercel.app/manifest.json',
+  ],
+  hentai: [
+    'https://streamio-hianime.onrender.com/manifest.json',
+    'https://hentaistream-addon.keypop3750.workers.dev/manifest.json',
+    'https://hanime-stremio.fly.dev/manifest.json',
   ]
 };
 

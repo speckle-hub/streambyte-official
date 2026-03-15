@@ -8,16 +8,20 @@ import { useQuery } from '@tanstack/react-query';
 import { Compass, Film, Tv } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { isNSFWItem } from '@/lib/contentFilter';
 
 export default function BrowsePage() {
   const [type, setType] = useState<'movie' | 'series'>('movie');
   const enabledAddons = useAddonStore((state) => state.getEnabledAddons());
+  const nsfwEnabled = useAddonStore((state) => state.nsfwEnabled);
 
-  const { data, isLoading } = useQuery({
+  const { data: rawData, isLoading } = useQuery({
     queryKey: ['catalog-browse', type, enabledAddons],
     queryFn: () => CatalogAggregator.getUnifiedCatalog(enabledAddons, type, 'top'),
     enabled: enabledAddons.length > 0,
   });
+
+  const data = (rawData || []).filter(item => nsfwEnabled || !isNSFWItem(item));
 
   return (
     <main className="min-h-screen bg-background p-12 space-y-12">
