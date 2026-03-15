@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Manifest } from '@/lib/stremio/types';
 import { PRESET_ADDONS } from '@/lib/stremio/client';
+import { isNSFWAddon } from '@/lib/contentFilter';
 
 export type InstalledAddon = {
   url: string;
@@ -40,14 +41,22 @@ type AddonState = {
 export const useAddonStore = create<AddonState>()(
   persist(
     (set, get) => ({
-      // Initialize with movies preset pack on first load
-      addons: PRESET_ADDONS.movies.map((url, i) => ({ 
-        url, 
-        priority: i, 
-        enabled: true, 
-        category: 'movies',
-        lastSynced: Date.now() 
-      })),
+      addons: [
+        { 
+          url: 'https://v3-cinemeta.strem.io/manifest.json', 
+          priority: 0, 
+          enabled: true, 
+          category: 'movies',
+          lastSynced: Date.now() 
+        },
+        ...PRESET_ADDONS.movies.filter(url => url !== 'https://v3-cinemeta.strem.io/manifest.json').map((url, i) => ({ 
+          url, 
+          priority: i + 1, 
+          enabled: true, 
+          category: 'movies',
+          lastSynced: Date.now() 
+        }))
+      ],
       addonManifests: {},
       nsfwEnabled: false,
 
@@ -72,6 +81,11 @@ export const useAddonStore = create<AddonState>()(
         set((state) => {
           const newAddons = [...state.addons];
           urls.forEach((url) => {
+            // Special rule: Skip NSFW addons when installing Anime pack
+            if (packName === 'anime' && (url.includes('hentai') || url.includes('hanime'))) {
+              return;
+            }
+            
             if (!newAddons.find((a) => a.url === url)) {
               newAddons.push({
                 url,
@@ -125,10 +139,17 @@ export const useAddonStore = create<AddonState>()(
       setNsfwEnabled: (enabled) => set({ nsfwEnabled: enabled }),
 
       getEnabledAddons: () => {
-        const { addons, nsfwEnabled } = get();
+        const { addons, nsfwEnabled, addonManifests } = get();
         return addons
           .filter((a) => a.enabled)
-          .filter((a) => nsfwEnabled || a.category !== 'adult')
+          .filter((a) => {
+            if (nsfwEnabled) return true;
+            // Strict filter: exclude if category is adult OR if manifest classifies as NSFW
+            if (a.category === 'adult') return false;
+            const manifest = addonManifests[a.url];
+            if (manifest && isNSFWAddon(manifest)) return false;
+            return true;
+          })
           .sort((a, b) => a.priority - b.priority)
           .map((a) => a.url);
       },

@@ -11,23 +11,34 @@ import { useQuery } from '@tanstack/react-query';
 import { Sparkles, History, Heart, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { CatalogItem } from '@/lib/stremio/types';
+import { isNSFWItem } from '@/lib/contentFilter';
 
 export default function Home() {
   const enabledAddons = useAddonStore((state) => state.getEnabledAddons());
+  const nsfwEnabled = useAddonStore((state) => state.nsfwEnabled);
   const watchlist = useWatchlistStore((state) => state.items);
   const history = useHistoryStore((state) => state.history);
 
-  const { data: movies, isLoading: moviesLoading } = useQuery({
+  const filterContent = (items: CatalogItem[] | undefined) => {
+    if (!items) return [];
+    if (nsfwEnabled) return items;
+    return items.filter(item => !isNSFWItem(item));
+  };
+
+  const { data: rawMovies, isLoading: moviesLoading } = useQuery({
     queryKey: ['catalog-movies', enabledAddons],
     queryFn: () => CatalogAggregator.getUnifiedCatalog(enabledAddons, 'movie', 'top'),
     enabled: enabledAddons.length > 0,
   });
 
-  const { data: series, isLoading: seriesLoading } = useQuery({
+  const { data: rawSeries, isLoading: seriesLoading } = useQuery({
     queryKey: ['catalog-series', enabledAddons],
     queryFn: () => CatalogAggregator.getUnifiedCatalog(enabledAddons, 'series', 'top'),
     enabled: enabledAddons.length > 0,
   });
+
+  const movies = filterContent(rawMovies);
+  const series = filterContent(rawSeries);
 
   return (
     <main className="min-h-screen bg-background pb-20 selection:bg-primary/30">

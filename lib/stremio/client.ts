@@ -142,8 +142,15 @@ export class StremioAddon {
   }
 }
 
+export const DEFAULT_ADDONS = [
+  'https://v3-cinemeta.strem.io/manifest.json', // Meta data
+  'https://mediafusion.elfhosted.com/manifest.json',
+  'https://stremify.elfhosted.com/manifest.json',
+];
+
 export const PRESET_ADDONS = {
   movies: [
+    'https://v3-cinemeta.strem.io/manifest.json',
     'https://mediafusion.elfhosted.com/manifest.json',
     'https://stremify.elfhosted.com/manifest.json',
     'https://tstrm.org/manifest.json',
@@ -156,10 +163,10 @@ export const PRESET_ADDONS = {
   anime: [
     'https://animestream-addon.keypop3750.workers.dev/manifest.json',
     'https://streamio-hianime.onrender.com/manifest.json',
-    'https://hentaistream-addon.keypop3750.workers.dev/manifest.json',
-    'https://hanime-stremio.fly.dev/manifest.json',
   ],
   adult: [
+    'https://hentaistream-addon.keypop3750.workers.dev/manifest.json',
+    'https://hanime-stremio.fly.dev/manifest.json',
     'https://dirty-pink.ers.pw/manifest.json',
     'https://07b88951aaab-jaxxx-v2.baby-beamup.club/manifest.json',
     'https://xclub-stremio.vercel.app/manifest.json',
