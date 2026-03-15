@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { useEffect } from 'react';
+import { useAddonStore } from '@/store/useAddonStore';
 import QueryProvider from '@/providers/QueryProvider';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
@@ -31,6 +33,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const ensureCinemata = useAddonStore((state) => state.ensureCinemata);
+
+  useEffect(() => {
+    ensureCinemata();
+  }, [ensureCinemata]);
+
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} overflow-hidden`}>

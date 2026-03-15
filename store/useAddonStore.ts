@@ -26,10 +26,11 @@ type AddonState = {
   setAddonPriority: (url: string, priority: number) => void;
   setAddonConfig: (url: string, config: Record<string, any>) => void;
   setManifest: (url: string, manifest: Manifest) => void;
+  ensureCinemata: () => void;
   setNsfwEnabled: (enabled: boolean) => void;
   
   // Getters
-  getEnabledAddons: () => string[];
+  getEnabledAddons: (category?: 'regular' | 'adult' | 'hentai') => string[];
   
   // User Preferences
   theme: 'dark' | 'light';
@@ -146,18 +147,54 @@ export const useAddonStore = create<AddonState>()(
           addonManifests: { ...state.addonManifests, [url]: manifest },
         })),
 
+      ensureCinemata: () => {
+        const { addons } = get();
+        const cinemataUrl = 'https://v3-cinemeta.strem.io/manifest.json';
+        if (!addons.find(a => a.url === cinemataUrl)) {
+          get().installAddon(cinemataUrl, 'movies');
+        }
+      },
+
       setNsfwEnabled: (enabled) => set({ nsfwEnabled: enabled }),
 
-      getEnabledAddons: () => {
+      getEnabledAddons: (category?: 'regular' | 'adult' | 'hentai') => {
         const { addons, nsfwEnabled, addonManifests } = get();
         return addons
           .filter((a) => a.enabled)
           .filter((a) => {
-            if (nsfwEnabled) return true;
-            // Strict filter: exclude if category is adult OR if manifest classifies as NSFW
-            if (a.category === 'adult') return false;
-            const manifest = addonManifests[a.url];
-            if (manifest && isNSFWAddon(manifest)) return false;
+            // Default to regular if no category provided
+            const targetCategory = category || 'regular';
+
+            if (targetCategory === 'regular') {
+              // Strict exclusion of EVERYTHING NSFW
+              if (a.category === 'adult' || a.category === 'hentai') return false;
+              if (NSFW_DOMAINS.some(d => a.url.includes(d))) return false;
+              const manifest = addonManifests[a.url];
+              if (manifest && isNSFWAddon(manifest)) return false;
+              return true;
+            }
+
+            if (targetCategory === 'adult') {
+              // ONLY include specified adult addons
+              return (
+                a.category === 'adult' || 
+                a.url.includes('dirty-pink') || 
+                a.url.includes('baby-beamup') || 
+                a.url.includes('xclub-stremio')
+              );
+            }
+
+            if (targetCategory === 'hentai') {
+              // ONLY include specified hentai addons
+              return (
+                a.category === 'hentai' || 
+                a.url.includes('hentaistream') || 
+                a.url.includes('hanime') || 
+                a.url.includes('hianime') ||
+                a.url.includes('streamio-hianime')
+              );
+            }
+
             return true;
           })
           .sort((a, b) => a.priority - b.priority)

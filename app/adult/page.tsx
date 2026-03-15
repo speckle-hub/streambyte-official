@@ -14,10 +14,8 @@ export default function AdultPage() {
   const nsfwEnabled = useAddonStore((state) => state.nsfwEnabled);
   const setNsfwEnabled = useAddonStore((state) => state.setNsfwEnabled);
   
-  // Get all addons that are categorized as adult or classified as NSFW
-  const adultAddons = addons
-    .filter(a => a.category === 'adult' || a.url.includes('dirty-pink') || a.url.includes('baby-beamup') || a.url.includes('xclub-stremio'))
-    .map(a => a.url);
+  // Get all addons that are categorized as adult
+  const adultAddons = useAddonStore((state) => state.getEnabledAddons('adult'));
 
   const { data, isLoading } = useQuery({
     queryKey: ['catalog-adult', adultAddons],

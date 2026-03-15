@@ -14,7 +14,7 @@ import { CatalogItem } from '@/lib/stremio/types';
 import { isNSFWItem } from '@/lib/contentFilter';
 
 export default function Home() {
-  const enabledAddons = useAddonStore((state) => state.getEnabledAddons());
+  const enabledAddons = useAddonStore((state) => state.getEnabledAddons('regular'));
   const nsfwEnabled = useAddonStore((state) => state.nsfwEnabled);
   const watchlist = useWatchlistStore((state) => state.items);
   const history = useHistoryStore((state) => state.history);

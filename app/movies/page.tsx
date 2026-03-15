@@ -9,7 +9,7 @@ import { Clapperboard } from 'lucide-react';
 import { isNSFWItem } from '@/lib/contentFilter';
 
 export default function MoviesPage() {
-  const enabledAddons = useAddonStore((state) => state.getEnabledAddons());
+  const enabledAddons = useAddonStore((state) => state.getEnabledAddons('regular'));
   const nsfwEnabled = useAddonStore((state) => state.nsfwEnabled);
 
   const { data: rawData, isLoading } = useQuery({
