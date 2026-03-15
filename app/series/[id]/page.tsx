@@ -11,18 +11,24 @@ import { useState } from 'react';
 import { Skeleton } from '@/components/Skeleton';
 import { SourceSelector } from '@/components/SourceSelector';
 import { cn } from '@/lib/utils';
+import { useAddonStore } from '@/store/useAddonStore';
 
 export default function SeriesPage() {
   const { id } = useParams();
   const seriesId = id as string;
+  const { getEnabledAddons } = useAddonStore();
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [activeEpisodeId, setActiveEpisodeId] = useState<string | null>(null);
 
   const { data: series, isLoading } = useQuery({
     queryKey: ['meta', 'series', seriesId],
     queryFn: async () => {
-      const client = new StremioAddon('https://v3-cinemeta.strem.io');
-      return await client.getMeta('series', seriesId);
+      const allAddons = [
+        ...getEnabledAddons('regular'),
+        ...getEnabledAddons('adult'),
+        ...getEnabledAddons('hentai')
+      ];
+      return await StremioAddon.getMetaFromAllAddons(allAddons, 'series', seriesId);
     },
   });
 

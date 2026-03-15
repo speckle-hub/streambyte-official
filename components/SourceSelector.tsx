@@ -13,7 +13,9 @@ import {
   Zap, 
   HardDrive,
   Cpu,
-  Tv
+  Tv,
+  Monitor,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -85,40 +87,60 @@ export function SourceSelector({ id, type, name, poster }: SourceSelectorProps) 
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-6">
         {streams.map((stream, idx) => (
-          <Link
-            key={idx}
-            href={`/player?url=${encodeURIComponent(stream.url)}&id=${id}&type=${type}&name=${encodeURIComponent(name)}&poster=${encodeURIComponent(poster || '')}${stream.headers ? `&headers=${encodeURIComponent(JSON.stringify(stream.headers))}` : ''}${stream.notWebReady ? '&notWebReady=true' : ''}`}
-            className="group flex items-center justify-between p-5 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-5">
-              <div className="h-12 w-12 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                {stream.type === 'hls' ? <Tv className="h-6 w-6 text-zinc-400 group-hover:text-primary" /> : <HardDrive className="h-6 w-6 text-zinc-400 group-hover:text-primary" />}
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black tracking-tight uppercase group-hover:text-primary transition-colors">
+          <div key={idx} className="flex flex-col gap-2">
+            <Link
+              href={`/player?url=${encodeURIComponent(stream.url)}&id=${id}&type=${type}&name=${encodeURIComponent(name)}&poster=${encodeURIComponent(poster || '')}${stream.headers ? `&headers=${encodeURIComponent(JSON.stringify(stream.headers))}` : ''}${stream.notWebReady ? '&notWebReady=true' : ''}`}
+              className="group flex items-center justify-between p-5 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-5">
+                <div className="h-12 w-12 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Play className="h-5 w-5 text-zinc-400 group-hover:text-primary transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors">
                     {stream.name || 'Unknown Source'}
                   </span>
-                  <div className={cn(
-                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
-                    stream.quality === '4K' ? "bg-primary text-white" : "bg-zinc-800 text-zinc-400"
-                  )}>
-                    {stream.quality}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{stream.provider || 'Direct'}</span>
+                    <div className={cn(
+                      "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                      stream.quality === '4K' ? "bg-primary text-white" : "bg-zinc-800 text-zinc-400"
+                    )}>
+                      {stream.quality}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                   <span>{stream.provider || 'P2P/Direct'}</span>
-                   {stream.size && <span>&bull; {stream.size}</span>}
-                </div>
               </div>
-            </div>
+              <div className="flex flex-col items-end gap-1">
+                {stream.notWebReady && (
+                  <span className="text-[8px] font-black uppercase bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full border border-orange-500/20">External Format</span>
+                )}
+                {stream.headers && (
+                  <Check className="h-3 w-3 text-green-500/50" />
+                )}
+                <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-primary transition-colors" />
+              </div>
+            </Link>
             
-            <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all transform group-hover:translate-x-1">
-              <Play className="h-4 w-4 fill-current ml-0.5" />
+            <div className="flex gap-2 px-2">
+              <a 
+                href={stream.type === 'magnet' ? stream.url : `vlc://${stream.url}`}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[9px] font-black uppercase tracking-tighter hover:bg-orange-500 hover:text-white transition-all"
+              >
+                <Monitor className="h-3 w-3" />
+                Play in VLC
+              </a>
+              <a 
+                href={`stremio://detail/${type}/${id}`}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[9px] font-black uppercase tracking-tighter hover:bg-purple-500 hover:text-white transition-all"
+              >
+                <Tv className="h-3 w-3" />
+                Open Stremio
+              </a>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 

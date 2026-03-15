@@ -20,9 +20,12 @@ export default function MoviePage() {
   const { data: movie, isLoading } = useQuery({
     queryKey: ['meta', 'movie', movieId],
     queryFn: async () => {
-      // Try fetching from Cinemeta first as primary metadata provider
-      const client = new StremioAddon('https://v3-cinemeta.strem.io');
-      return await client.getMeta('movie', movieId);
+      const allAddons = [
+        ...getEnabledAddons('regular'),
+        ...getEnabledAddons('adult'),
+        ...getEnabledAddons('hentai')
+      ];
+      return await StremioAddon.getMetaFromAllAddons(allAddons, 'movie', movieId);
     },
   });
 

@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
-  Play, Pause, Volume2, VolumeX, Maximize, Minimize, 
+  Play, Pause, Volume2, VolumeX, Maximize, Share2, 
   ArrowLeft, Settings, SkipForward, SkipBack, 
-  Loader2, AlertCircle, Monitor, ChevronRight, Tv
+  Monitor, Info, Lock, AlertCircle, Tv, ChevronRight,
+  Copy, ChevronDown, ChevronUp, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/lib/stremio/stremio-utils';
@@ -51,6 +52,8 @@ function Player() {
   const [seeking, setSeeking] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [showTechnical, setShowTechnical] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const playerRef = useRef<any>(null);
@@ -194,18 +197,57 @@ function Player() {
           </a>
           <button 
             onClick={() => router.back()} 
-            className="sm:col-span-2 flex items-center justify-center gap-3 px-6 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Details
           </button>
+          
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(streamUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }} 
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-zinc-800 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+          >
+            <Copy className="h-4 w-4" />
+            {copied ? 'Copied Link!' : 'Copy Stream URL'}
+          </button>
         </div>
 
-        <div className="flex flex-col items-center gap-2">
-            <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.3em]">Technical Details</p>
-            <code className="text-[8px] text-zinc-500 bg-zinc-900 px-3 py-1 rounded-full border border-white/5 max-w-[300px] truncate">
-                {streamUrl}
-            </code>
+        <div className="w-full max-w-md">
+          <button 
+            onClick={() => setShowTechnical(!showTechnical)}
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors mx-auto mb-4"
+          >
+            {showTechnical ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showTechnical ? 'Hide' : 'Show'} Technical Details
+          </button>
+
+          {showTechnical && (
+            <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 text-left space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Original URL</p>
+                <code className="text-[10px] block break-all font-mono text-zinc-300 bg-black/30 p-2 rounded-lg border border-white/5">
+                  {streamUrl}
+                </code>
+              </div>
+              {headers && (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">HTTP Headers</p>
+                  <pre className="text-[10px] block break-all font-mono text-zinc-300 bg-black/30 p-2 rounded-lg border border-white/5 overflow-x-auto">
+                    {JSON.stringify(headers, null, 2)}
+                  </pre>
+                </div>
+              )}
+              <div className="pt-2 border-t border-white/5">
+                <p className="text-[10px] text-zinc-500 leading-relaxed italic">
+                  Note: If using VLC, these headers are automatically passed via command line flags to bypass restriction.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

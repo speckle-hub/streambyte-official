@@ -140,6 +140,36 @@ export class StremioAddon {
       return false;
     }
   }
+
+  static async getMetaFromAllAddons(urls: string[], type: string, id: string): Promise<MetaDetail | null> {
+    // Separate Cinemata and others to prioritize official/common metadata
+    const cinemataUrl = 'https://v3-cinemeta.strem.io/manifest.json';
+    const mainUrls = urls.includes(cinemataUrl) ? [cinemataUrl] : [];
+    const otherUrls = urls.filter(u => u !== cinemataUrl);
+
+    // Try Cinemata first if it's in the list
+    if (mainUrls.length > 0) {
+      try {
+        const meta = await new StremioAddon(mainUrls[0]).getMeta(type, id);
+        if (meta) return meta;
+      } catch (e) {
+        // Fallback to others
+      }
+    }
+
+    // Try others in parallel (limit to first success)
+    const results = await Promise.allSettled(
+      otherUrls.map(url => new StremioAddon(url).getMeta(type, id))
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        return result.value;
+      }
+    }
+
+    return null;
+  }
 }
 
 export const DEFAULT_ADDONS = [
