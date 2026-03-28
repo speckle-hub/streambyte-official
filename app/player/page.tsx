@@ -57,18 +57,28 @@ function Player() {
   const [error, setError] = useState<string | null>(null);
 
   const playerRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSaveTimeRef = useRef<number>(0);
+  
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isMixedContent, setIsMixedContent] = useState(false);
 
   const { updateProgress, getHistoryItem } = useHistoryStore();
   const historyItem = getHistoryItem(id);
 
-  // Resume from last position
+  // Resume from last position and check for mixed content
   useEffect(() => {
     if (historyItem && playerRef.current) {
       playerRef.current.seekTo(historyItem.currentTime, 'seconds');
     }
-  }, [historyItem]);
+
+    // Check for mixed content (HTTPS site trying to play HTTP stream)
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && streamUrl.startsWith('http:')) {
+      setIsMixedContent(true);
+      setError('Mixed Content Detected: This stream is HTTP but you are on an HTTPS site. Most browsers will block this playback.');
+    }
+  }, [historyItem, streamUrl]);
 
   const handleProgress = (state: any) => {
     if (!seeking) {
@@ -118,12 +128,25 @@ function Player() {
   };
 
   const toggleFullScreen = () => {
+    if (!containerRef.current) return;
+    
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+      containerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+      setIsFullScreen(true);
     } else {
       document.exitFullscreen();
+      setIsFullScreen(false);
     }
   };
+
+  // Update fullscreen state on listener
+  useEffect(() => {
+    const handleFsChange = () => setIsFullScreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
 
   const togglePip = async () => {
     try {
@@ -255,7 +278,11 @@ function Player() {
 
   return (
     <div 
-      className="h-screen w-screen bg-black overflow-hidden relative group cursor-none selection:bg-none"
+      ref={containerRef}
+      className={cn(
+        "bg-black overflow-hidden relative group cursor-none selection:bg-none transition-all duration-500",
+        isFullScreen ? "fixed inset-0 z-[100] h-screen w-screen" : "h-screen w-screen"
+      )}
       onMouseMove={handleMouseMove}
       style={{ cursor: showControls ? 'default' : 'none' }}
     >

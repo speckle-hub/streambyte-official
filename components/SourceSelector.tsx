@@ -29,11 +29,22 @@ interface SourceSelectorProps {
 
 export function SourceSelector({ id, type, name, poster }: SourceSelectorProps) {
   const { getEnabledAddons } = useAddonStore();
-  const enabledAddons = getEnabledAddons('regular'); // Filter regular content for streams
+  
+  // Decide which categories to search
+  const categories: ('regular' | 'adult' | 'hentai')[] = ['regular'];
+  if (id.includes('porn') || id.includes('xxx')) categories.push('adult');
+  if (id.includes('hentai')) categories.push('hentai');
+  
+  const enabledAddons = [
+    ...getEnabledAddons('regular'),
+    ...(categories.includes('adult') ? getEnabledAddons('adult') : []),
+    ...(categories.includes('hentai') ? getEnabledAddons('hentai') : [])
+  ];
 
   const { data: streams, isLoading, error } = useQuery({
     queryKey: ['streams', type, id],
     queryFn: async () => {
+      // Use all relevant addons for stream search
       const rawStreams = await CatalogAggregator.getUnifiedStreams(enabledAddons, type, id);
       return rawStreams.map(s => StreamResolver.resolve(s));
     },
