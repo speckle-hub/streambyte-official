@@ -14,7 +14,7 @@ export class StremioAddon {
     }
   }
 
-  private async fetchWithRetry<T>(url: string, retries = 3): Promise<T | null> {
+  private async fetchWithRetry<T>(url: string, retries = 2, timeoutMs = 8000): Promise<T | null> {
     // Check for deduplication
     if (REQUEST_DEDUPLICATION_MAP.has(url)) {
       return REQUEST_DEDUPLICATION_MAP.get(url);
@@ -23,18 +23,24 @@ export class StremioAddon {
     const fetchPromise = (async () => {
       let delay = 1000;
       for (let i = 0; i < retries; i++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
         try {
-          const res = await fetch(url);
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
           if (res.ok) {
             const data = await res.json();
             return data as T;
           }
           if (res.status === 404) return null;
         } catch (error) {
-          if (i === retries - 1) throw error;
+          clearTimeout(timeoutId);
+          if (i === retries - 1) return null; // Don't throw, just return null after retries
         }
         await sleep(delay);
-        delay *= 2; // 1s, 2s, 4s
+        delay *= 1.5; // Slightly faster backoff
       }
       return null;
     })().finally(() => {
@@ -142,33 +148,59 @@ export class StremioAddon {
   }
 
   static async getMetaFromAllAddons(urls: string[], type: string, id: string): Promise<MetaDetail | null> {
+    if (!urls || urls.length === 0) return null;
+
     // Separate Cinemata and others to prioritize official/common metadata
     const cinemataUrl = 'https://v3-cinemeta.strem.io/manifest.json';
-    const mainUrls = urls.includes(cinemataUrl) ? [cinemataUrl] : [];
-    const otherUrls = urls.filter(u => u !== cinemataUrl);
+    const hasCinemeta = urls.some(u => u.includes('cinemeta') || u === cinemataUrl);
+    const otherUrls = urls.filter(u => !u.includes('cinemeta') && u !== cinemataUrl);
 
-    // Try Cinemata first if it's in the list
-    if (mainUrls.length > 0) {
+    // 1. Try Cinemata first if it's available (official meta source)
+    if (hasCinemeta) {
       try {
-        const meta = await new StremioAddon(mainUrls[0]).getMeta(type, id);
+        const cinemetaUrlInList = urls.find(u => u.includes('cinemeta')) || cinemataUrl;
+        const meta = await new StremioAddon(cinemetaUrlInList).getMeta(type, id);
         if (meta) return meta;
       } catch (e) {
         // Fallback to others
       }
     }
 
-    // Try others in parallel (limit to first success)
-    const results = await Promise.allSettled(
-      otherUrls.map(url => new StremioAddon(url).getMeta(type, id))
-    );
+    // 2. Try others in parallel, but return as soon as ONE succeeds with a valid result
+    if (otherUrls.length === 0) return null;
 
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value) {
-        return result.value;
-      }
-    }
+    return new Promise<MetaDetail | null>((resolve) => {
+      let pending = otherUrls.length;
+      let resolved = false;
 
-    return null;
+      // Overall safety timeout (12 seconds) for the concurrent pass
+      const globalTimeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
+      }, 12000);
+
+      otherUrls.forEach(async (url) => {
+        try {
+          const meta = await new StremioAddon(url).getMeta(type, id);
+          if (!resolved && meta) {
+            resolved = true;
+            clearTimeout(globalTimeout);
+            resolve(meta);
+          }
+        } catch (e) {
+          // Ignore individual addon failures
+        } finally {
+          pending--;
+          if (pending === 0 && !resolved) {
+            resolved = true;
+            clearTimeout(globalTimeout);
+            resolve(null);
+          }
+        }
+      });
+    });
   }
 }
 
